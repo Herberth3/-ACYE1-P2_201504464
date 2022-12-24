@@ -77,11 +77,13 @@ include macros.asm
     funtion_id                 db 13, 10, '0: $'
     free_space_funtion         db 'Espacio libre $'
     funcion_select             db 13,10, 'Funcion seleccionada: $'
-    show_derivada              db 13,10,'Derivada de funci',162,'n: $'
+    show_derivada              db 13,10,'Derivada de la funci', 162, 'n: $'
+    show_integral              db 13,10,'Integral de la funci', 162, 'n: $'
     signo_menos                db '-$'                                                                                                  ; Caracter menos (-)
     signo_equis                db 'x$'                                                                                                  ; Caracter equis (x)
     signo_exponencial          db '^$'                                                                                                  ; Caracter circunflejo (^) para indicar exponenciacion
     signo_mas                  db '+$'                                                                                                  ; Caracter mas (+)
+    mas_c                      db '+C$'                                                                                                 ; Caracteres mas (+) y la letra (c) para finalizar la integral
 
     ; Banderas
     is_funtion_error           db 0                                                                                                     ; INDICA SI LA FUNCION ES CORRECTA
@@ -271,9 +273,27 @@ DERIVAR_FUNTION proc
                      LimpiarVariable    arr_coeficientes                    ; SE REINICIA LA VARIABLE QUE CONTIENE LOS COEFICIENTE DE LA FUNCION
                      SepararTerminos2   var_funcion                         ; SEPARA LA FUNCION POR COEFICIENTES Y EXPONENTES PARA ALMACENARLOS EN SU VARIABLE RESPECTIVA
                      CONSOLE_OUT        show_derivada                       ; MENSAJE PARA INDICAR LA DERIVADA ES
-                     Derivar            arr_coeficientes, arr_exponentes    ; MUESTRA LA DERIVADA DE LA FUNCION
+                     Solve_Derivation   arr_coeficientes, arr_exponentes    ; MUESTRA LA DERIVADA DE LA FUNCION
                      ret
 DERIVAR_FUNTION endp
+
+    ; I N T E G R A R   F U N C I O N ****************************************************************************
+    ; Hace el split de la funcion seleccionada entre coeficientes y exponentes para luego resolverla y mostrar la integral
+FUNTION_INTEGRAL proc
+                     CONSOLE_OUT        alert_write_id_funtion
+                     call               CONSOLE_IN
+                     LimpiarVariable    var_funcion
+                     SeleccionarFuncion var_input
+                     CONSOLE_OUT        funcion_select
+                     CONSOLE_OUT        var_funcion
+
+                     LimpiarVariable    arr_exponentes
+                     LimpiarVariable    arr_coeficientes
+                     SepararTerminos2   var_funcion
+                     CONSOLE_OUT        show_integral
+                     Solve_Integral     arr_coeficientes, arr_exponentes
+                     ret
+FUNTION_INTEGRAL endp
 
     ; M A I N ************************************************************************************************
 MAIN PROC

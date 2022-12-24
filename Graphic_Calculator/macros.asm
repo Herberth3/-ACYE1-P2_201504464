@@ -608,37 +608,37 @@ endm
 ;-----------------------------------------------------------------------------------------------------------------------------
 ;   DERIVAR FUNCIÓN
 ;-----------------------------------------------------------------------------------------------------------------------------
-Derivar macro coeficientes, exponentes
-                    local                  ciclo, continuar_ciclo
-                    push                   si
-                    push                   ax
-                    push                   bx
-                    mov                    si, 0
-    ciclo:          
-                    cmp                    exponentes[si], 0        ; IGNORAR CONSTANTES
-                    je                     continuar_ciclo
+Solve_Derivation macro coeficientes, exponentes
+                     local                  ciclo, continuar_ciclo
+                     push                   si
+                     push                   ax
+                     push                   bx
+                     mov                    si, 0
+    ciclo:           
+                     cmp                    exponentes[si], 0         ; IGNORAR CONSTANTES
+                     je                     continuar_ciclo
     ;MULTIPLICAR EXP * COEF
-                    mov                    al, coeficientes[si]
-                    mov                    bl, exponentes[si]
-                    imul                   bl
-                    mov                    var16_coef, ax
+                     mov                    al, coeficientes[si]
+                     mov                    bl, exponentes[si]
+                     imul                   bl
+                     mov                    var16_coef, ax
     ;RESTAR EXP-1
-                    mov                    al, exponentes[si]
-                    sub                    al, 1
-                    mov                    var_exp, al
-                    Imprimir16ConMasyMenos var16_coef
-                    cmp                    var_exp, 0
-                    je                     continuar_ciclo
-                    CONSOLE_OUT            signo_equis
-                    CONSOLE_OUT            signo_exponencial
-                    Imprimir8bits          var_exp
-    continuar_ciclo:
-                    inc                    si
-                    cmp                    coeficientes[si], '$'
-                    jne                    ciclo
-                    pop                    bx
-                    pop                    ax
-                    pop                    si
+                     mov                    al, exponentes[si]
+                     sub                    al, 1
+                     mov                    var_exp, al
+                     Imprimir16ConMasyMenos var16_coef
+                     cmp                    var_exp, 0
+                     je                     continuar_ciclo
+                     CONSOLE_OUT            signo_equis
+                     CONSOLE_OUT            signo_exponencial
+                     Imprimir8bits          var_exp
+    continuar_ciclo: 
+                     inc                    si
+                     cmp                    coeficientes[si], '$'
+                     jne                    ciclo
+                     pop                    bx
+                     pop                    ax
+                     pop                    si
 endm
 
 ;-----------------------------------------------------------------------------------------------------------------------------
@@ -657,7 +657,7 @@ Imprimir16ConMasyMenos macro valor
                            Imprimir16bits valor
                            jmp            irse
     pos:                   
-                           CONSOLE_OUT       signo_mas
+                           CONSOLE_OUT    signo_mas
                            Imprimir16bits valor
     irse:                  
 endm
@@ -778,4 +778,59 @@ Imprimir8bits macro registro
                   pop         cx
                   pop         bx
                   pop         ax
+endm
+
+;-----------------------------------------------------------------------------------------------------------------------------
+;   INTEGRAR FUNCIÓN
+;-----------------------------------------------------------------------------------------------------------------------------
+Solve_Integral macro coeficientes, exponentes
+                    local                 ciclo, continuar_ciclo
+                    push                  si
+                    push                  ax
+                    push                  bx
+                    mov                   si, 0
+    ciclo:          
+    ;SUMAR 1 AL exp
+                    mov                   al, exponentes[si]
+                    add                   al, 1
+                    mov                   var_exp, al
+    ;DIVIDIR COEF/(EXP+1)
+                    mov                   al, coeficientes[si]
+                    cbw
+                    mov                   bl, var_exp
+                    idiv                  bl
+                    mov                   var_coef, al
+                    Imprimir8ConMasyMenos var_coef
+                    CONSOLE_OUT           signo_equis
+                    CONSOLE_OUT           signo_exponencial
+                    Imprimir8bits         var_exp
+    continuar_ciclo:
+                    inc                   si
+                    cmp                   coeficientes[si], '$'
+                    jne                   ciclo
+                    CONSOLE_OUT           mas_c
+                    pop                   bx
+                    pop                   ax
+                    pop                   si
+endm
+
+;-----------------------------------------------------------------------------------------------------------------------------
+;   IMPRIMIR 8 BITS CON MENOS Y MÁS
+;----------------------------------------------------------------------------------------------------------------------------- 
+Imprimir8ConMasyMenos macro valor
+                          local         negat, pos, irse
+        
+                          cmp           valor, 128
+                          jnc           negat
+                          jmp           pos
+
+    negat:                
+                          CONSOLE_OUT   signo_menos
+                          neg           valor
+                          Imprimir8bits valor
+                          jmp           irse
+    pos:                  
+                          CONSOLE_OUT   signo_mas
+                          Imprimir8bits valor
+    irse:                 
 endm
