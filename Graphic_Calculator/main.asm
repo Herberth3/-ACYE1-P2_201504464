@@ -36,9 +36,6 @@ include macros.asm
     var_exp                    db 0
     var_coef                   db 0
     var16_coef                 dw 0
-    prueba2                    db 'Imprimir F no implementada', 13, 10, '$'
-    prueba3                    db 'Imprimir D no implementada', 13, 10, '$'
-    prueba4                    db 'Imprimir I no implementada', 13, 10, '$'
     prueba5                    db 'Opcion 5 no implementada', 13, 10, '$'
     prueba6                    db 'Opcion 6 no implementada', 13, 10, '$'
     prueba7                    db 'Opcion 7 no implementada', 13, 10, '$'
@@ -72,13 +69,13 @@ include macros.asm
     alert_bad_write_funtion    db 13, 10, 'La funci', 162, 'n esta mal escrita. $'
     alert_saveSuccess_funtion  db 13, 10, 'La funci',162,'n ha sido guardada. :)$'
     alert_overflow_funtions    db 13, 10, 'No hay espacio para la funci', 162, 'n$'
-    alert_incorrent_id_funtion db 13,10, 'Id para funcion incorrecto$'
-    alert_write_id_funtion     db 13,10, 'Ingrese ID de funcion(A-T): $'
+    alert_incorrent_id_funtion db 13, 10, 'Id para funcion incorrecto$'
+    alert_write_id_funtion     db 13, 10, 'Ingrese ID de funcion(A-T): $'
     funtion_id                 db 13, 10, '0: $'
     free_space_funtion         db 'Espacio libre $'
-    funcion_select             db 13,10, 'Funcion seleccionada: $'
-    show_derivada              db 13,10,'Derivada de la funci', 162, 'n: $'
-    show_integral              db 13,10,'Integral de la funci', 162, 'n: $'
+    funcion_select             db 13, 10, 'Funcion seleccionada: $'
+    show_derivada              db 13, 10, 'Derivada de la funci', 162, 'n: $'
+    show_integral              db 13, 10, 'Integral de la funci', 162, 'n: $'
     signo_menos                db '-$'                                                                                                  ; Caracter menos (-)
     signo_equis                db 'x$'                                                                                                  ; Caracter equis (x)
     signo_exponencial          db '^$'                                                                                                  ; Caracter circunflejo (^) para indicar exponenciacion
@@ -124,7 +121,7 @@ SALIR PROC
 SALIR ENDP
 
     ; M E T O D O   L I M P I A R   R E G I S T R O S ********************************************************
-    ; Limpia los registros utilizados
+    ; Limpia los registros utilizados, poniendo a 0 los registros con el xor
 LIMPIAR_R PROC
                      xor                ax, ax
                      xor                bx, bx
@@ -168,9 +165,9 @@ FUNTION_IN ENDP
     ; METODO LIMPIAR CONSOLA
     ; Limpia todo el procedimiento mostrado en consola anterior al llamado del metodo
 CLEAR_SCREEN PROC
-                     mov                ah, 0h
-                     mov                al, 3
-                     int                10H
+                     mov                ah, 0h                              ; Set video mode
+                     mov                al, 3                               ; text mode. 80x25. 16 colors. 8 pages
+                     int                10H                                 ; Interruption
                      ret
 CLEAR_SCREEN ENDP
 
@@ -271,7 +268,7 @@ DERIVAR_FUNTION proc
 
                      LimpiarVariable    arr_exponentes                      ; SE REINICIA LA VARIABLE QUE ALMACENA LOS EXPONENTES DE LA FUNCION
                      LimpiarVariable    arr_coeficientes                    ; SE REINICIA LA VARIABLE QUE CONTIENE LOS COEFICIENTE DE LA FUNCION
-                     SepararTerminos2   var_funcion                         ; SEPARA LA FUNCION POR COEFICIENTES Y EXPONENTES PARA ALMACENARLOS EN SU VARIABLE RESPECTIVA
+                     Split_Funtion      var_funcion                         ; SEPARA LA FUNCION POR COEFICIENTES Y EXPONENTES PARA ALMACENARLOS EN SU VARIABLE RESPECTIVA
                      CONSOLE_OUT        show_derivada                       ; MENSAJE PARA INDICAR LA DERIVADA ES
                      Solve_Derivation   arr_coeficientes, arr_exponentes    ; MUESTRA LA DERIVADA DE LA FUNCION
                      ret
@@ -280,18 +277,18 @@ DERIVAR_FUNTION endp
     ; I N T E G R A R   F U N C I O N ****************************************************************************
     ; Hace el split de la funcion seleccionada entre coeficientes y exponentes para luego resolverla y mostrar la integral
 FUNTION_INTEGRAL proc
-                     CONSOLE_OUT        alert_write_id_funtion
-                     call               CONSOLE_IN
-                     LimpiarVariable    var_funcion
-                     SeleccionarFuncion var_input
-                     CONSOLE_OUT        funcion_select
-                     CONSOLE_OUT        var_funcion
+                     CONSOLE_OUT        alert_write_id_funtion              ; PIDE QUE SE INGRESE LA LETRA (ID) DE LA FUNCION A INTEGRAR
+                     call               CONSOLE_IN                          ; SE LLAMA LA FUNCION PARA LEER LO INGRESADO
+                     LimpiarVariable    var_funcion                         ; SE REINICIA LA VARIABLE QUE ALMACENARA LA FUNCION SELECCINADA
+                     SeleccionarFuncion var_input                           ; SE BUSCA LA FUNCION Y SE ALMACENA EN LA VARIABLE var_funcion
+                     CONSOLE_OUT        funcion_select                      ; SE IMPRIME LA FUNCION SELECCIONA
+                     CONSOLE_OUT        var_funcion                         ; SE IMPRIME LA FUNCION SELECCINADA
 
-                     LimpiarVariable    arr_exponentes
-                     LimpiarVariable    arr_coeficientes
-                     SepararTerminos2   var_funcion
-                     CONSOLE_OUT        show_integral
-                     Solve_Integral     arr_coeficientes, arr_exponentes
+                     LimpiarVariable    arr_exponentes                      ; SE REINICIA LA VARIABLE QUE ALMACENA LOS EXPONENTES DE LA FUNCION
+                     LimpiarVariable    arr_coeficientes                    ; SE REINICIA LA VARIABLE QUE CONTIENE LOS COEFICIENTE DE LA FUNCION
+                     Split_Funtion      var_funcion                         ; SEPARA LA FUNCION POR COEFICIENTES Y EXPONENTES PARA ALMACENARLOS EN SU VARIABLE RESPECTIVA
+                     CONSOLE_OUT        show_integral                       ; MENSAJE PARA INDICAR LA INTEGRAL ES
+                     Solve_Integral     arr_coeficientes, arr_exponentes    ; RESUELVE Y MUESTRA LA INTEGRAL DE LA FUNCION
                      ret
 FUNTION_INTEGRAL endp
 
@@ -303,28 +300,28 @@ MAIN PROC
     ; Etiqueta para crear un loop del menu
     Loop_menu:       
                      call               CLEAR_SCREEN                        ; Limpia la consola para solo mostrar el menu
-                     CONSOLE_OUT        menu_header
-                     call               CONSOLE_IN
-                     call               LIMPIAR_R
+                     CONSOLE_OUT        menu_header                         ; Muestra el menu en consola
+                     call               CONSOLE_IN                          ; Capturla lo ingresado por consola
+                     call               LIMPIAR_R                           ; Actualiza los registros
 
                      cmp                var_input[0], '1'                   ; Si es igual, se llama a la funcion para Ingresar Ecuacion
                      jne                Option2                             ; Si es diferente, salta a la siguiente opcion
-                     call               FUNTION_IN
+                     call               FUNTION_IN                          ; Llamada al procedimiento
                      jmp                New_loop_menu
     Option2:         
                      cmp                var_input[0], '2'                   ; Si es igual, se llama a la funcion para Imprimir la Ecuacion
                      jne                Option3                             ; Si es diferente, salta a la siguiente opcion
-                     call               SHOW_FUNTIONS
+                     call               SHOW_FUNTIONS                       ; Llamada al procedimiento
                      jmp                New_loop_menu
     Option3:         
                      cmp                var_input[0], '3'                   ; Si es igual, se llama a la funcion para Imprimir la Derivada
                      jne                Option4                             ; Si es diferente, salta a la siguiente opcion
-                     call               DERIVAR_FUNTION
+                     call               DERIVAR_FUNTION                     ; Llamada al procedimiento
                      jmp                New_loop_menu
     Option4:         
                      cmp                var_input[0], '4'                   ; Si es igual, se llama a la funcion para Imprimir la Integral
                      jne                Option5                             ; Si es diferente, salta a la siguiente opcion
-                     call               FUNTION_INTEGRAL
+                     call               FUNTION_INTEGRAL                    ; Llamada al procedimiento
                      jmp                New_loop_menu
     Option5:         
                      cmp                var_input[0], '5'                   ; Si es igual, se llama a la funcion para Graficar Funcion, Derivada, Integral
@@ -344,7 +341,7 @@ MAIN PROC
     Option8:         
                      cmp                var_input[0], '8'                   ; Si es igual, se llama a la funcion para Salir
                      jne                Option_not_found
-                     call               SALIR
+                     call               SALIR                               ; Llama al procedimiento para terminar la aplicacion
 
     New_loop_menu:   
                      CONSOLE_OUT        alert_press_enter                   ; Imprime peticion de presionar enter

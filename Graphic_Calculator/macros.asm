@@ -4,9 +4,9 @@
 CONSOLE_OUT macro cadena
                 push dx
                 push ax
-                mov  ah, 09h
-                mov  dx, offset cadena
-                int  21h
+                mov  ah, 09h              ; output of a string at DS:DX. String must be terminated by '$'
+                mov  dx, offset cadena    ; string a mostrar
+                int  21h                  ; Interruption
                 pop  ax
                 pop  dx
 endm
@@ -25,17 +25,17 @@ SepararTerminos macro funcion
                     mov              si, 0
                     mov              di, 0
     ciclo:          
-                    cmp              funcion[si], '-'
-                    je               negativo
-                    cmp              funcion[si], '+'
-                    je               termino
+                    cmp              funcion[si], '-'                                             ; COMPARA SI EL CARACTER ES UN MENOS (-)
+                    je               negativo                                                     ; SALTA SI ES IGUAL AL MENOS
+                    cmp              funcion[si], '+'                                             ; COMPARA SI EL CARACTER ES UN MAS (+)
+                    je               termino                                                      ; SALTA SI ES IGUAL AL MAS
     seguir:         
-                    mov              al, funcion[si]
-                    mov              var_termino[di], al                                          ;GLOBAL
+                    mov              al, funcion[si]                                              ; SE ALMACENA EN AL EL CARACTER COMO REGISTRO DE 8 BITS
+                    mov              var_termino[di], al                                          ; SE ALMACENA EN LA VARABLE GLOBAL EN CARACTER
                     inc              di
                     inc              si
-                    cmp              funcion[si], '$'
-                    jne              ciclo
+                    cmp              funcion[si], '$'                                             ; SE CONSULTA SI AUN HAY CARACTERES PARA LEER
+                    jne              ciclo                                                        ; SI AUN HAY CARACTERES SE SIGUE LEYENDO
                     jmp              termino
     negativo:       
                     cmp              var_termino[0], '$'
@@ -68,44 +68,44 @@ ComprobarTermino macro termino
                      mov         is_error_termino, 0
                      mov         si, 0
 
-                     cmp         termino[si], '-'
-                     je          negativo
-                     cmp         termino[si], 'x'
-                     je          variable
-                     EsNumero    termino[si]
-                     cmp         is_numero, 1
+                     cmp         termino[si], '-'                                                                          ; COMPARA SI EL CARACTER ES UN MENOS
+                     je          negativo                                                                                  ; SALTA SI ES UN MENOS
+                     cmp         termino[si], 'x'                                                                          ; COMPARA SI EL CARACTER ES UNA VARIABLE X
+                     je          variable                                                                                  ; SALTA SI ES UNA VARIABLE
+                     EsNumero    termino[si]                                                                               ; COMPRUEBA SI EL CARACTER ES UN NUMERO
+                     cmp         is_numero, 1                                                                              ; POR MEDIO DE LA BANDERA COMPARA SI ES UN NUMERO
                      je          numero
-                     jmp         error
+                     jmp         error                                                                                     ; SI EL CARACTER NO ES UN MENOS, VARIABLE X O NUMERO. ERROR
 
-    negativo:        
+    negativo:                                                                                                              ; SI EL CARACTER ES UN MENOS
                      inc         si
-                     cmp         termino[si], 'x'
+                     cmp         termino[si], 'x'                                                                          ; COMPARA QUE EL SIGUIENTE CARACTER SEA UNA VARIABLE X
                      je          variable
-                     EsNumero    termino[si]
+                     EsNumero    termino[si]                                                                               ; COMPARA QUE EL SIGUIENTE CARACTER SEA UN NUMERO
                      cmp         is_numero, 1
                      je          numero
-                     jmp         error
-    variable:        
+                     jmp         error                                                                                     ; SI EL SIGUIENTE CARACTER NO ES UNA VARIABLE X O UN NUMERO, ERROR
+    variable:                                                                                                              ; SI EL CARACTER ES UNA VARIABLE
                      inc         si
-                     cmp         termino[si], '^'
+                     cmp         termino[si], '^'                                                                          ; EL SIGUIENTE TERMINO PUEDE SER UN ^ O SIMPLEMENTE TERMINA
                      je          exponente
                      jmp         fin_ct
-    exponente:       
+    exponente:                                                                                                             ; SI EL CARACTER ES UN EXPONENTE
                      inc         si
-                     EsExponente termino[si]
+                     EsExponente termino[si]                                                                               ; SE QUE EL SIGUIENTE CARACTER SEA UN EXPONENTE (UN NUMERO)
                      cmp         is_exp, 1
                      je          fin_cadena
-                     jmp         error
+                     jmp         error                                                                                     ; ERROR, SI EL SIGUIENTE CARACTER NO ES UN NUMERO
     fin_cadena:      
                      inc         si
                      cmp         termino[si], '$'
                      je          fin_ct
                      jmp         error
-    numero:          
+    numero:                                                                                                                ; SI EL CARACTER ES UN NUMERO
                      inc         si
-                     cmp         termino[si], 'x'
+                     cmp         termino[si], 'x'                                                                          ; EL SIGUIENTE CARACTER PUEDE QUE SER UNA VARIABLE X
                      je          variable
-                     EsNumero    termino[si]
+                     EsNumero    termino[si]                                                                               ; EL SIGUIENTE CARACTER PUEDE SER OTRO NUMERO
                      cmp         is_numero,1
                      je          numero2
                      jmp         fin_cadena
@@ -122,7 +122,7 @@ endm
 
 ;-----------------------------------------------------------------------------------------------------------------------------
 ;   ES NUMERO UN CHAR?
-;-----------------------------------------------------------------------------------------------------------------------------    
+; Comprueba que el caracter sea un numero   
 EsNumero macro char
              local y, es_num, no_num, fin
              mov   is_numero, 0
@@ -145,7 +145,7 @@ endm
 
 ;-----------------------------------------------------------------------------------------------------------------------------
 ;   ES UN EXPONENTE EL CHAR?
-;-----------------------------------------------------------------------------------------------------------------------------    
+; Comprueba que el caracter sea un numero entre 1-5    
 EsExponente macro char
                 local y, es_num, no_num, fin
                 mov   is_exp, 0
@@ -167,7 +167,7 @@ endm
 
 ;-----------------------------------------------------------------------------------------------------------------------------
 ;   LIMPIAR VARIABLE
-;-----------------------------------------------------------------------------------------------------------------------------    
+; Reinicia la variable que se le pasa por parametro a su estado inicial ($$$$$$)   
 LimpiarVariable macro array
                     local ciclo
                     push  si
@@ -182,7 +182,7 @@ endm
 
 ;-----------------------------------------------------------------------------------------------------------------------------
 ;   GUARDAR FUNCIÓN
-;-----------------------------------------------------------------------------------------------------------------------------
+; Almacena en la lista de funciones la nueva funcion que se ha ingresado
 GuardarFuncion macro funcion
                    local       s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,s15,s16,s17,s18,s19,s20,nohay,exit
                    cmp         func_1[0], '$'
@@ -291,7 +291,7 @@ endm
 
 ;-----------------------------------------------------------------------------------------------------------------------------
 ;   COPIAR FUNCIÓN
-;-----------------------------------------------------------------------------------------------------------------------------
+; Copia la nueva funcion que se ingreso a una de las variables que se utilizan para almacenar funciones
 Copiar macro var1, var2
            local More
            push  si
@@ -318,7 +318,7 @@ PrintFuntion macro funcion
                  local       vacio, exit
                  cmp         funcion[0], '$'       ; Valida que la cadena no este vacia
                  je          vacio                 ; Salta si la cadena esta vacia
-                 CONSOLE_OUT funcion               ; Imprime la caden de la funcion
+                 CONSOLE_OUT funcion               ; Imprime la cadena de la funcion
                  jmp         exit
     vacio:       
                  CONSOLE_OUT free_space_funtion    ; Muestra que hay espacio para ingresar otra ecuacion
@@ -327,7 +327,7 @@ endm
 
 ;-----------------------------------------------------------------------------------------------------------------------------
 ;   SELECCIONAR FUNCIÓN 
-;-----------------------------------------------------------------------------------------------------------------------------
+; Copia en una variable auxiliar (var_funcion) la funcion que se selecciono para integrarla o derivarla
 SeleccionarFuncion macro id
                        local       s2,s3,s4,s5,s6,s7,s8,s9,s10,s11,s12,s13,s14,s15,s16,s17,s18,s19,s20,nohay,exit
                        push        si
@@ -440,45 +440,45 @@ endm
 ;-----------------------------------------------------------------------------------------------------------------------------
 ;   SEPARAR FUNCIÓN POR TÉRMINOS PARA LECTURA
 ;-----------------------------------------------------------------------------------------------------------------------------    
-SepararTerminos2 macro funcion
-                     local           ciclo, seguir,seguir2, negativo, st_termino, errorxd,finxd,limpiarxd
-                     push            si
-                     push            di
-                     push            ax
+Split_Funtion macro funcion
+                  local           ciclo, seguir,seguir2, negativo, st_termino, errorxd,finxd,limpiarxd
+                  push            si
+                  push            di
+                  push            ax
 
-                     mov             si, 0
-                     mov             di, 0
-    ciclo:           
-                     cmp             funcion[si], '-'
-                     je              negativo
-                     cmp             funcion[si], '+'
-                     je              st_termino
-    seguir:          
-                     mov             al, funcion[si]
-                     mov             var_termino[di], al                                                     ;GLOBAL
-                     inc             di
-                     inc             si
-                     cmp             funcion[si], '$'
-                     jne             ciclo
-                     jmp             st_termino
-    negativo:        
-                     cmp             var_termino[0], '$'
-                     je              seguir
-                     dec             si
-    st_termino:      
-                     cmp             var_termino[0], '0'
-                     je              limpiarxd
-                     LeerTermino     var_termino
-    limpiarxd:       
-                     LimpiarVariable var_termino
-                     mov             di, 0
-                     inc             si
-                     cmp             funcion[si], '$'
-                     jne             ciclo
-    finxd:           
-                     pop             ax
-                     pop             di
-                     pop             si
+                  mov             si, 0
+                  mov             di, 0
+    ciclo:        
+                  cmp             funcion[si], '-'
+                  je              negativo
+                  cmp             funcion[si], '+'
+                  je              st_termino
+    seguir:       
+                  mov             al, funcion[si]
+                  mov             var_termino[di], al                                                     ; Variable global que almacena cada caracter
+                  inc             di
+                  inc             si
+                  cmp             funcion[si], '$'
+                  jne             ciclo
+                  jmp             st_termino
+    negativo:     
+                  cmp             var_termino[0], '$'
+                  je              seguir
+                  dec             si
+    st_termino:   
+                  cmp             var_termino[0], '0'
+                  je              limpiarxd
+                  LeerTermino     var_termino
+    limpiarxd:    
+                  LimpiarVariable var_termino
+                  mov             di, 0
+                  inc             si
+                  cmp             funcion[si], '$'
+                  jne             ciclo
+    finxd:        
+                  pop             ax
+                  pop             di
+                  pop             si
 endm
 
 ;-----------------------------------------------------------------------------------------------------------------------------
