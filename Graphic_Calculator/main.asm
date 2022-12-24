@@ -324,7 +324,7 @@ MAIN PROC
     Option4:         
                      cmp                var_input[0], '4'                   ; Si es igual, se llama a la funcion para Imprimir la Integral
                      jne                Option5                             ; Si es diferente, salta a la siguiente opcion
-                     CONSOLE_OUT        prueba4
+                     call               FUNTION_INTEGRAL
                      jmp                New_loop_menu
     Option5:         
                      cmp                var_input[0], '5'                   ; Si es igual, se llama a la funcion para Graficar Funcion, Derivada, Integral
