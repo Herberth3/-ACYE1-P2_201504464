@@ -154,7 +154,7 @@ EsExponente macro char
                 jae   y
                 jmp   no_num
     y:          
-                cmp   char, '4'
+                cmp   char, '5'
                 jbe   es_num
                 jmp   no_num
     es_num:     

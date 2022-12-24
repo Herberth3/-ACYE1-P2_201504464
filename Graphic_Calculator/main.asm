@@ -299,7 +299,7 @@ MAIN PROC
     Option3:         
                      cmp                var_input[0], '3'                   ; Si es igual, se llama a la funcion para Imprimir la Derivada
                      jne                Option4                             ; Si es diferente, salta a la siguiente opcion
-                     CONSOLE_OUT        prueba3
+                     call               DERIVAR_FUNTION
                      jmp                New_loop_menu
     Option4:         
                      cmp                var_input[0], '4'                   ; Si es igual, se llama a la funcion para Imprimir la Integral
