@@ -26,7 +26,7 @@ La calculadora resuelve ecuaciones de grado n (donde n es un número entero no m
 <p>Es la primera pantalla que se le muestra al usuario, le permite ingresar la funcion que quiere resolver.<br>
 Contiene una lista de opciones para ejecutarse segun lo que indica.</p>
 
-![pantalla](/Images/menu.png)
+![pantalla](https://github.com/Herberth3/-ACYE1-P2_201504464/blob/main/Graphic_Calculator/Images/menu.png)
 
 ## 2. Seleccionar Opcion 1 (Ingresar Ecuacion)
 
