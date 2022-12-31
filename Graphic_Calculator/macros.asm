@@ -562,7 +562,7 @@ LeerTermino macro termino
     ;SUMARLE EL NUEVO NUMERO
                 mov          al, termino[si]
                 sub          al, 48
-                add          var_coef,al
+                add          var_coef, al
 
                 inc          si
                 cmp          termino[si], 'x'
@@ -833,4 +833,616 @@ Imprimir8ConMasyMenos macro valor
                           CONSOLE_OUT   signo_mas
                           Imprimir8bits valor
     irse:                 
+endm
+
+; ****************************************************************************************************************************
+;   M O D O   V I D E O   P A R A   G R A F I C A S
+; ****************************************************************************************************************************
+
+;-----------------------------------------------------------------------------------------------------------------------------
+;   CONSOLE IN PARA INTERVALOS
+; Pide que se ingresen los intervalos para mostrar la grafica. Puede ser desde -99 a 99
+;-----------------------------------------------------------------------------------------------------------------------------
+CONSOLE_IN_INTERVALS macro
+                         CONSOLE_OUT     alert_init_interval
+                         Set_Entrada     var_intervaloI
+                         CheckInterval   var_intervaloI
+                         Convert_Inteval var_intervaloI
+                         CONSOLE_OUT     alert_finish_interval
+                         Set_Entrada     var_intervaloF
+                         CheckInterval   var_intervaloF
+                         Convert_Inteval var_intervaloF
+endm
+
+;-----------------------------------------------------------------------------------------------------------------------------
+;   SET ENTRADA
+; Establece el texto ingresado por el usuario a la variable que recibe como parametro
+; Param array: variable que almacenara el texto ingresado
+;-----------------------------------------------------------------------------------------------------------------------------
+Set_Entrada macro array
+                local getCadena, finCadena
+                xor   si, si
+    getCadena:  
+                mov   ah, 01h                 ;se guarda en al en código hexadecimal del caracter leído
+                int   21h
+                cmp   al, 0dh
+                je    finCadena
+                mov   array[si], al
+                inc   si
+                jmp   getCadena
+    finCadena:  
+                mov   al, 24h
+                mov   array[si], al
+endm
+
+;-----------------------------------------------------------------------------------------------------------------------------
+;   CHECK INTERVAL
+; Revisa que el intervalo sea de 2 digitos. Si el numero no trae signo le asigna el '+'.
+;-----------------------------------------------------------------------------------------------------------------------------
+CheckInterval macro var
+                  local     order, finish
+    ;Todo check if the length don't pass the limit
+                  CheckLength var
+                  cmp       si, 2
+                  je        order
+                  jmp       finish
+    
+    order:        
+                  xor       bx, bx
+                  mov       bl, var[0]
+                  mov       bh, var[1]
+                  mov       var[0], 43
+                  mov       var[1], bl
+                  mov       var[2], bh
+    finish:       
+
+endm
+
+;-----------------------------------------------------------------------------------------------------------------------------
+;   CHECK LENGTH
+; Hace que SI tome la longitud que el numero ocupa en la variable
+;-----------------------------------------------------------------------------------------------------------------------------
+CheckLength macro var
+              local while, finish
+              xor   si, si
+    while:    
+              cmp   var[si], 24h
+              je    finish
+              inc   si
+              jmp   while
+    finish:   
+endm
+
+;-----------------------------------------------------------------------------------------------------------------------------
+;    CONVERT INTERVAL
+; Convierte los numeros ASCII del intervalo a un numero
+;-----------------------------------------------------------------------------------------------------------------------------
+Convert_Inteval macro num
+                    local isNegative, finish
+                    xor   ax, ax
+                    xor   bx, bx
+                    xor   dx, dx
+                    mov   ax, 10
+
+                    mov   bl, num[1]
+                    sub   bl, 48
+                    mul   bx
+                    mov   dl, num[2]
+                    sub   dl, 48
+                    add   al, dl
+                    cmp   num[0], 45
+                    je    isNegative
+                    jmp   finish
+
+    isNegative:     
+                    xor   ah, ah
+                    neg   al
+    finish:         
+                    xor   cx, cx
+                    mov   cl, num[0]
+    ;push cx
+    ;cleanBuffer num, SIZEOF num, 24h
+    ;pop cx
+                    mov   num[0],cl
+                    mov   num[1],al
+endm
+
+;------------------------------------------------------------------------------------------------------------------------------------------------
+;   SPLIT COEFICIENTES
+;   Extrae los coeficientes de la funcion ingresada con su signo
+;------------------------------------------------------------------------------------------------------------------------------------------------
+Split_Coeficientes MACRO function
+                       local           negativo, positivo, variable, numero, numero2, seguir2, exponente, error,bien, fin_ct, fin_cadena,seg_var,finalizar, inicio, l_signo
+                       push            si
+                       push            ax
+                       push            bx
+
+                       mov             si, 0
+    inicio:            
+                       mov             var_exp, 0
+                       LimpiarVariable aux_coef
+
+                       cmp             function[si], '-'
+                       je              negativo
+                       cmp             function[si], '+'
+                       je              positivo
+                       cmp             function[si], 'x'
+                       je              variable
+                       jmp             numero
+
+    positivo:          
+                       mov             aux_coef[0], 43
+                       inc             si
+                       cmp             function[si], 'x'
+                       je              variable
+                       jmp             numero
+
+    negativo:          
+                       mov             aux_coef[0], 45
+                       inc             si
+                       cmp             function[si], 'x'
+                       je              variable
+                       jmp             numero
+    l_signo:           
+                       mov             aux_coef[0], 43
+    variable:          
+                       cmp             aux_coef[0], 36                                                                                                                         ; Compara con '$', si existe '$' la variable no tiene asignado un signo
+                       je              l_signo
+                       cmp             aux_coef[1], 36                                                                                                                         ; Compara con '$', si existe '$' la variable no tiene un numero asignado                                                                                                                        ; comparar si la variable no tiene numero antes, se compara con '$' pues el caracter por defecto cuando no tiene asignado algo
+                       jne             seg_var
+                       mov             aux_coef[1], 49                                                                                                                         ; Si no existe un numero asignado se le asigna un '1'                                                                                                                     ; si la variable no tiene un numero antes, se le asigna un '1'
+    seg_var:           
+                       inc             si
+                       cmp             function[si], '^'
+                       je              exponente
+    exponente:         
+                       inc             si
+                       mov             al, function[si]
+                       sub             al, 48
+                       add             var_exp, al
+                       jmp             fin_cadena
+    fin_cadena:        
+                       inc             si
+                       SetCoeficientes var_exp
+                       cmp             function[si], '$'
+                       je              finalizar
+                       jmp             inicio
+    numero:            
+                       mov             al, function[si]
+                       mov             aux_coef[1], al
+                       inc             si
+                       cmp             function[si], 'x'
+                       je              variable
+    finalizar:         
+                       pop             bx
+                       pop             ax
+                       pop             si
+ENDM
+
+;-----------------------------------------------------------------------------------------------------------------------------------------------------------
+;   Asigna cada coeficiente extraido a una de las 5 variables que necesito para grafiar
+;-----------------------------------------------------------------------------------------------------------------------------------------------------------
+SetCoeficientes MACRO exponente
+                    local  coeficiente4, coeficiente3, coeficiente2, coeficiente1, coeficiente0, finish
+                    push   bx
+                    xor    cx, cx
+                    mov    cl, exponente
+
+                    cmp    cl, 4
+                    je     coeficiente4
+                    cmp    cl, 3
+                    je     coeficiente3
+                    cmp    cl, 2
+                    je     coeficiente2
+                    cmp    cl, 1
+                    je     coeficiente1
+                    cmp    cl, 0
+                    je     coeficiente0
+
+    coeficiente4:   
+                    Copiar coef4, aux_coef
+                    jmp    finish
+    coeficiente3:   
+                    Copiar coef3, aux_coef
+                    jmp    finish
+    coeficiente2:   
+                    Copiar coef2, aux_coef
+                    jmp    finish
+    coeficiente1:   
+                    Copiar coef1, aux_coef
+                    jmp    finish
+    coeficiente0:   
+                    Copiar coef0, aux_coef
+
+    finish:         
+
+                    pop    bx
+ENDM
+
+;----------------------------------------------------------------------------------------
+;   GRAPH FUNCTION
+; Inicia el modo video y dibuja la grafica, termina pasando a modo texto
+;----------------------------------------------------------------------------------------
+Graph_Function macro
+                   AsciiToNumber    ; Para las variables que almacenan los coeficientes
+                   ModoVideo
+                   Draw_Axis
+                   Check_Function
+                   pressKey           ;Press a key to continue
+                   ModoTexto          ;back to text mode
+endm
+
+;----------------------------------------------------------------------------------------
+; Guardar el coeficiente como numero y no como ascii
+;----------------------------------------------------------------------------------------
+convertNumber macro var
+                  xor bl,bl
+                  mov bl, var[1]
+                  sub bl, 48
+                  mov var[1], bl
+endm
+
+AsciiToNumber MACRO
+                  convertNumber coef4
+                  convertNumber coef3
+                  convertNumber coef2
+                  convertNumber coef1
+                  convertNumber coef0
+ENDM
+
+ModoVideo macro
+    ;resolucion de 320x180
+              mov ax, 0013h
+              int 10h
+    ;mov ax, 0A000h
+    ;mov ds, ax        ; DS = A000h (memoria de graficos).
+endm
+
+;----------------------------------------------------------------------------------------
+; Dibuja los ejes X y Y
+;----------------------------------------------------------------------------------------
+Draw_Axis macro
+              local      eje_x, eje_y
+              xor        cx, cx
+              mov        cx, 320
+    eje_x:    
+              Draw_Pixel cx, 100, 4fh
+              loop       eje_x
+              mov        cx, 200
+    eje_y:    
+              Draw_Pixel 160, cx, 4fh
+              loop       eje_y
+endm
+
+;----------------------------------------------------------------------------------------
+; Draw a pixel in the graphic mode, (0,0) is in the top left corner
+;----------------------------------------------------------------------------------------
+Draw_Pixel macro coorX, coorY, color
+               local fin
+               xor   si, si
+               mov   si, coorY
+               cmp   si, 0
+               jl    fin
+               cmp   si, 200
+               jg    fin
+               pusha
+               mov   ah, 0ch
+               mov   al, color
+               mov   bh, 0h
+               mov   dx, coorY
+               mov   cx, coorX
+               int   10h
+               popa
+    fin:       
+endm
+
+;----------------------------------------------------------------------------------------
+; Verifica el grado al que se hara la grafica
+;----------------------------------------------------------------------------------------
+Check_Function macro
+                   LOCAL       isFourthGrade, isCubic, isCuadratic, isLineal, isConstant, finish
+                   cmp         coef4[1], 0
+                   jne         isFourthGrade
+                   cmp         coef3[1], 0
+                   jne         isCubic
+                   cmp         coef2[1], 0
+                   jne         isCuadratic
+                   cmp         coef1[1], 0
+                   jne         isLineal
+                   cmp         coef0[0], 0
+                   jne         isConstant
+                   jmp         finish
+
+    isFourthGrade: 
+                   fourthGrade
+                   jmp         finish
+    isCubic:       
+    ;thirdGrade  coef3,coef2,coef1,coef0
+                   jmp         finish
+    isCuadratic:   
+    ;cuadratic   coef2, coef1, coef0
+                   jmp         finish
+    isLineal:      
+    ;lineal      coef1, coef0
+                   jmp         finish
+    isConstant:    
+    ;constant    coef0
+                   jmp         finish
+    finish:        
+
+endm
+
+;----------------------------------------------------------------------------------------
+;   DIBUJAR DE GRADO 4
+;----------------------------------------------------------------------------------------
+fourthGrade macro
+                LOCAL      while, is_negative, is_positive, continue, finish
+                xor        ax, ax
+                xor        bx, bx
+                xor        cx, cx                                               ;cl = intervaloI | ch = intertervaloF
+                mov        cl, var_intervaloI[1]
+                mov        ch, var_intervaloF[1]
+
+    while:      
+                xor        ax, ax
+                mov        bl, 160                                              ;x
+                mov        dl, 100                                              ;y (160,100) - (0,0)
+    ;checkSign
+                test       cl,cl
+                js         is_negative
+                jmp        is_positive
+    ;---------------Axis x----------------
+    is_negative:
+                neg        cl
+                sub        bl, cl                                               ;where x start
+    ;y
+                cascadaX4
+                neg        cl
+                jmp        continue
+    is_positive:
+                mul        cl
+                add        bl, cl
+                cascadaX4
+    ;-------------Axis y-------------------
+    continue:   
+    ;Draw
+                Draw_Pixel bx, dx, 0ch
+                inc        cl
+                cmp        cl, ch
+                jg         finish
+                jmp        while
+    finish:     
+endm
+
+cascadaX4 macro
+                 LOCAL        coefficient3, coefficient2, coefficient1, coefficient0, minus4,minus3,minus2,minus1,minus, fin
+    ;Coefficient 4
+                 cmp          cl, 10
+                 jg           fin
+
+                 cmp          coef4[0], 45
+                 je           minus4
+    ;x^4
+                 pushExceptAX
+                 xor          ch, ch
+                 potencia     4, cx
+                 popExceptAx
+    ;------------------c4 * x^4----------------
+                 push         dx
+                 xor          dx, dx
+                 mov          dl, coef4[1]
+                 mul          dx
+                 pop          dx
+    ;-----------------scale xd-----------------
+                 pushExceptAX
+                 xor          dx, dx
+                 mov          cx, 500
+                 div          cx
+                 popExceptAx
+    ;----------------real value---------------
+                 sub          dx, ax
+                 jmp          coefficient3
+    minus4:      
+    ;------------------x^4--------------------
+                 pushExceptAX
+                 xor          ch, ch
+                 potencia     4, cx
+                 popExceptAx
+    ;-----------------c4 * x^4----------------
+                 push         dx
+                 xor          dx, dx
+                 mov          dl, coef4[1]
+                 mul          dx
+                 pop          dx
+    ;-----------------scale xd----------------
+                 push         cx
+                 mov          cx, 500
+                 div          cx
+                 pop          cx
+    ;----------------real value---------------
+                 add          dx, ax
+    coefficient3:
+                 cmp          coef3[0], 45
+                 je           minus3
+    ;----------------x^3---------------
+                 pushExceptAX
+                 xor          ch, ch
+                 potencia     3, cx
+                 popExceptAx
+    ;------------------c3 * x^3----------------
+                 push         dx
+                 xor          dx, dx
+                 mov          dl, coef3[1]
+                 mul          dx
+                 pop          dx
+    ;-----------------scale xd-----------------
+                 pushExceptAX
+                 xor          dx, dx
+                 mov          cx, 500
+                 div          cx
+                 popExceptAx
+    ;----------------real value---------------
+                 sub          dx, ax
+                 jmp          coefficient2
+    minus3:      
+    ;------------------x^3--------------------
+                 pushExceptAX
+                 xor          ch, ch
+                 potencia     3, cx
+                 popExceptAx
+    ;-----------------c3 * x^3----------------
+                 push         dx
+                 xor          dx, dx
+                 mov          dl, coef3[1]
+                 mul          dx
+                 pop          dx
+    ;-----------------scale xd----------------
+                 push         cx
+                 mov          cx, 500
+                 div          cx
+                 pop          cx
+    ;----------------real value---------------
+                 add          dx, ax
+    coefficient2:
+                 cmp          coef2[0],45
+                 je           minus2
+    ;----------------x^2---------------
+                 pushExceptAX
+                 xor          ch, ch
+                 potencia     2, cx
+                 popExceptAx
+    ;------------------c2 * x^2----------------
+                 push         dx
+                 xor          dx, dx
+                 mov          dl, coef2[1]
+                 mul          dx
+                 pop          dx
+    ;-----------------scale xd-----------------
+                 pushExceptAX
+                 xor          dx, dx
+                 mov          cx, 500
+                 div          cx
+                 popExceptAx
+    ;----------------real value---------------
+                 sub          dx, ax
+                 jmp          coefficient1
+    minus2:      
+    ;------------------x^2--------------------
+                 pushExceptAX
+                 xor          ch, ch
+                 potencia     2, cx
+                 popExceptAx
+    ;-----------------c2 * x^2----------------
+                 push         dx
+                 xor          dx, dx
+                 mov          dl, coef2[1]
+                 mul          dx
+                 pop          dx
+    ;-----------------scale xd----------------
+                 push         cx
+                 mov          cx, 500
+                 div          cx
+                 pop          cx
+    ;----------------real value---------------
+                 add          dx, ax
+    coefficient1:
+                 cmp          coef1[0], 45
+                 je           minus1
+    ;----------------x^1---------------
+                 pushExceptAX
+                 xor          ch, ch
+                 potencia     1, cx
+                 popExceptAx
+    ;------------------c1 * x^1----------------
+                 push         dx
+                 xor          dx, dx
+                 mov          dl, coef1[1]
+                 mul          dx
+                 pop          dx
+    ;-----------------scale xd-----------------
+                 pushExceptAX
+                 xor          dx, dx
+                 mov          cx, 500
+                 div          cx
+                 popExceptAx
+    ;----------------real value---------------
+                 sub          dx, ax
+                 jmp          coefficient0
+    minus1:      
+    ;------------------x^1--------------------
+                 pushExceptAX
+                 xor          ch, ch
+                 potencia     3, cx
+                 popExceptAx
+    ;-----------------c1 * x^1----------------
+                 push         dx
+                 xor          dx, dx
+                 mov          dl, coef1[1]
+                 mul          dx
+                 pop          dx
+    ;-----------------scale xd----------------
+                 push         cx
+                 mov          cx, 500
+                 div          cx
+                 pop          cx
+    ;----------------real value---------------
+                 add          dx, ax
+    coefficient0:
+                 cmp          coef0[0], 45
+                 je           minus
+                 push         cx
+                 xor          ch, ch
+                 mov          cl, coef0[1]
+                 sub          dx, cx
+                 pop          cx
+                 jmp          fin
+    minus:       
+                 push         cx
+                 xor          ch, ch
+                 mov          cl, coef0[1]
+                 add          dx, cx
+                 pop          cx
+    fin:         
+
+endm
+
+pushExceptAX macro
+                 push bx
+                 push cx
+                 push dx
+endm
+
+popExceptAx macro
+                pop dx
+                pop cx
+                pop bx
+endm
+
+potencia macro exponente, value
+             LOCAL while, finish
+             xor   bx, bx
+             mov   bl, exponente
+             mov   ax, 1
+
+             cmp   bl, 0
+             jg    while
+             jmp   finish
+
+    while:   
+             cmp   bx, 1
+             jl    finish
+             mul   value
+             dec   bx
+             jmp   while
+    finish:  
+endm
+
+pressKey macro
+             mov ah, 10h
+             int 16h
+endm
+
+ModoTexto macro
+              mov al, 0003h
+              int 10h
 endm
