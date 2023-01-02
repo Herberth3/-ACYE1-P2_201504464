@@ -66,10 +66,85 @@ Puede consultar el ID de la funcion a operar Seleccionando la Opcion 2 (Imprimir
 
 ![Integral](https://github.com/Herberth3/-ACYE1-P2_201504464/blob/main/Graphic_Calculator/Images/Opcion4(1).png)
 
-## 6. Seleccionar Opcion 5, 6, 7 (Graficar la funcion, Encontrar ceros por Newton, Encontrar ceros por Steffensen)
+## 6. Seleccionar Opcion 5 (Graficar la funcion)
+<p>Permite graficar la funcion ingresada hasta de grado 4, de coeficientes de 1 solo digito. Pudiendo tambien graficar de la misma su derivada.</p>
+<p>Para ello se ingresa un ID de la funcion que quiere mostrar la grafica. EL Id esta entre las letras mayusculas A-T<br>
+Pude consultar el ID de la funcion a operar Seleccionando la Opcion 2 (Imprimir la funcion almacenada).</p>
+
+![Grafica_ID](/Images/ChooseOpt5.png)
+
+<p>Ya ingresado el ID se mostrara un sub-menu en donde se puede seleccionar la funcion normal o la derivada para graficar.<br>
+La grafica de la integral no fue implementada!!!<br>
+La opcion Regresar, retorna al menu principal.</p>
+
+![Menu_Graph](/Images/ChooseGraph.png)
+
+<p>Se pide que se ingresen los intervalos para mostrar la grafica. Puede ser desde -99 a 99</p>
+
+![Intervalo](/Images/Intervalo.png)
+
+<p>Ya comprendido como funciona la opcion 5; si se ha ingresado una funcion de grado 4:</p>
+
+![FuncX4](/Images/funcx4.png)
+
+<p>La grafica para una funcion grado 4 se mostraria asi:</p>
+
+![GraphX4](/Images/Graphx4.png)
+
+<p>La derivada de la funcion grado 4 se mostraria asi:</p>
+
+![DerX4](/Images/DerX4Grapx3.png)
+
+<p>Si se ha ingresado una funcion de grado 3:</p>
+
+![FuncX3](/Images/funcx3.png)
+
+<p>La grafica para una funcion grado 3 se mostraria asi:</p>
+
+![GraphX3](/Images/DerX4Grapx3.png)
+
+<p>La derivada de la funcion grado 3 se mostraria asi:</p>
+
+![DerX3](/Images/DerX3Graphx2.png)
+
+<p>Si se ha ingresado una funcion de grado 2:</p>
+
+![FuncX2](/Images/funcx2.png)
+
+<p>La grafica para una funcion grado 2 se mostraria asi:</p>
+
+![GraphX2](/Images/DerX3Graphx2.png)
+
+<p>La derivada de la funcion grado 2 no se ha podido implementar!</p>
+
+<p>Si se ha ingresado una funcion de grado 1:</p>
+
+![FuncX1](/Images/funcx1.png)
+
+<p>La grafica para una funcion grado 1 se mostraria asi:</p>
+
+![GraphX1](/Images/Graphx1.png)
+
+<p>La derivada de la funcion grado 1 se mostraria asi:</p>
+
+![DerX1](/Images/DerX1.png)
+
+<p>Si se ha ingresado una funcion de grado 0 (constante):</p>
+
+![FuncX0](/Images/funcx0.png)
+
+<p>La grafica para una funcion grado 0 (constante) se mostraria asi:</p>
+
+![GraphX0](/Images/Graphx0.png)
+
+<p>La derivada de la funcion grado 0 se mostraria asi:</p>
+
+![DerX0](/Images/DerX0.png)
+
+## 7. Seleccionar Opcion 6, 7 (Encontrar ceros por Newton, Encontrar ceros por Steffensen)
 <p>Opciones no implementadas aun.</p>
 
-## 7. Seleccionar Opcion 8 (Salir de la aplicacion)
+## 8. Seleccionar Opcion 8 (Salir de la aplicacion)
 
 <p>Permite la terminacion de la aplicacion</p>
 
