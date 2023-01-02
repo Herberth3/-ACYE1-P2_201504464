@@ -880,20 +880,20 @@ endm
 ; Revisa que el intervalo sea de 2 digitos. Si el numero no trae signo le asigna el '+'.
 ;-----------------------------------------------------------------------------------------------------------------------------
 CheckInterval macro var
-                  local     order, finish
+                  local       order, finish
     ;Todo check if the length don't pass the limit
                   CheckLength var
-                  cmp       si, 2
-                  je        order
-                  jmp       finish
+                  cmp         si, 2
+                  je          order
+                  jmp         finish
     
     order:        
-                  xor       bx, bx
-                  mov       bl, var[0]
-                  mov       bh, var[1]
-                  mov       var[0], 43
-                  mov       var[1], bl
-                  mov       var[2], bh
+                  xor         bx, bx
+                  mov         bl, var[0]
+                  mov         bh, var[1]
+                  mov         var[0], 43
+                  mov         var[1], bl
+                  mov         var[2], bh
     finish:       
 
 endm
@@ -903,14 +903,14 @@ endm
 ; Hace que SI tome la longitud que el numero ocupa en la variable
 ;-----------------------------------------------------------------------------------------------------------------------------
 CheckLength macro var
-              local while, finish
-              xor   si, si
-    while:    
-              cmp   var[si], 24h
-              je    finish
-              inc   si
-              jmp   while
-    finish:   
+                local while, finish
+                xor   si, si
+    while:      
+                cmp   var[si], 24h
+                je    finish
+                inc   si
+                jmp   while
+    finish:     
 endm
 
 ;-----------------------------------------------------------------------------------------------------------------------------
@@ -1064,12 +1064,12 @@ ENDM
 ; Inicia el modo video y dibuja la grafica, termina pasando a modo texto
 ;----------------------------------------------------------------------------------------
 Graph_Function macro
-                   AsciiToNumber    ; Para las variables que almacenan los coeficientes
+                   AsciiToNumber       ; Para las variables que almacenan los coeficientes
                    ModoVideo
                    Draw_Axis
-                   Check_Function
-                   pressKey           ;Press a key to continue
-                   ModoTexto          ;back to text mode
+                   Choose_Function
+                   pressKey            ;Press a key to continue
+                   ModoTexto           ;back to text mode
 endm
 
 ;----------------------------------------------------------------------------------------
@@ -1082,6 +1082,9 @@ convertNumber macro var
                   mov var[1], bl
 endm
 
+;----------------------------------------------------------------------------------------
+; Inicializa todos los coeficientes de la funcion normal como numeros y no como ascii
+;----------------------------------------------------------------------------------------
 AsciiToNumber MACRO
                   convertNumber coef4
                   convertNumber coef3
@@ -1090,6 +1093,9 @@ AsciiToNumber MACRO
                   convertNumber coef0
 ENDM
 
+;----------------------------------------------------------------------------------------
+; Inicializa la interrupcion para modo video
+;----------------------------------------------------------------------------------------
 ModoVideo macro
     ;resolucion de 320x180
               mov ax, 0013h
@@ -1137,275 +1143,877 @@ Draw_Pixel macro coorX, coorY, color
 endm
 
 ;----------------------------------------------------------------------------------------
-; Verifica el grado al que se hara la grafica
+; Elige y ejecuta el grado al que se hara la grafica
 ;----------------------------------------------------------------------------------------
-Check_Function macro
-                   LOCAL       isFourthGrade, isCubic, isCuadratic, isLineal, isConstant, finish
-                   cmp         coef4[1], 0
-                   jne         isFourthGrade
-                   cmp         coef3[1], 0
-                   jne         isCubic
-                   cmp         coef2[1], 0
-                   jne         isCuadratic
-                   cmp         coef1[1], 0
-                   jne         isLineal
-                   cmp         coef0[0], 0
-                   jne         isConstant
-                   jmp         finish
+Choose_Function macro
+                    LOCAL            isFourthGrade, isCubic, isCuadratic, isLineal, isConstant, finish
+                    cmp              coef4[1], 0
+                    jne              isFourthGrade
+                    cmp              coef3[1], 0
+                    jne              isCubic
+                    cmp              coef2[1], 0
+                    jne              isCuadratic
+                    cmp              coef1[1], 0
+                    jne              isLineal
+                    cmp              coef0[0], 0
+                    jne              isConstant
+                    jmp              finish
 
-    isFourthGrade: 
-                   fourthGrade
-                   jmp         finish
-    isCubic:       
-    ;thirdGrade  coef3,coef2,coef1,coef0
-                   jmp         finish
-    isCuadratic:   
-    ;cuadratic   coef2, coef1, coef0
-                   jmp         finish
-    isLineal:      
-    ;lineal      coef1, coef0
-                   jmp         finish
-    isConstant:    
-    ;constant    coef0
-                   jmp         finish
-    finish:        
+    isFourthGrade:  
+                    Execute_4Grade
+                    jmp              finish
+    isCubic:        
+                    Execute_3Grade   coef3,coef2,coef1,coef0
+                    jmp              finish
+    isCuadratic:    
+                    Execute_2Grade   coef2, coef1, coef0
+                    jmp              finish
+    isLineal:       
+                    Execute_1Grade   coef1, coef0
+                    jmp              finish
+    isConstant:     
+                    Execute_Constant coef0
+                    jmp              finish
+    finish:         
 
 endm
 
 ;----------------------------------------------------------------------------------------
 ;   DIBUJAR DE GRADO 4
 ;----------------------------------------------------------------------------------------
-fourthGrade macro
-                LOCAL      while, is_negative, is_positive, continue, finish
-                xor        ax, ax
-                xor        bx, bx
-                xor        cx, cx                                               ;cl = intervaloI | ch = intertervaloF
-                mov        cl, var_intervaloI[1]
-                mov        ch, var_intervaloF[1]
+Execute_4Grade macro
+                   LOCAL        while, is_negative, is_positive, continue, finish
+                   xor          ax, ax
+                   xor          bx, bx
+                   xor          cx, cx                                               ;cl = intervaloI | ch = intertervaloF
+                   mov          cl, var_intervaloI[1]
+                   mov          ch, var_intervaloF[1]
 
-    while:      
-                xor        ax, ax
-                mov        bl, 160                                              ;x
-                mov        dl, 100                                              ;y (160,100) - (0,0)
+    while:         
+                   xor          ax, ax
+                   mov          bl, 160                                              ;x
+                   mov          dl, 100                                              ;y (160,100) - (0,0)
     ;checkSign
-                test       cl,cl
-                js         is_negative
-                jmp        is_positive
+                   test         cl,cl
+                   js           is_negative
+                   jmp          is_positive
     ;---------------Axis x----------------
-    is_negative:
-                neg        cl
-                sub        bl, cl                                               ;where x start
+    is_negative:   
+                   neg          cl
+                   sub          bl, cl                                               ;where x start
     ;y
-                cascadaX4
-                neg        cl
-                jmp        continue
-    is_positive:
-                mul        cl
-                add        bl, cl
-                cascadaX4
+                   PosicionarX4
+                   neg          cl
+                   jmp          continue
+    is_positive:   
+                   mul          cl
+                   add          bl, cl
+                   PosicionarX4
     ;-------------Axis y-------------------
-    continue:   
+    continue:      
     ;Draw
-                Draw_Pixel bx, dx, 0ch
-                inc        cl
-                cmp        cl, ch
-                jg         finish
-                jmp        while
-    finish:     
+                   Draw_Pixel   bx, dx, 0ch
+                   inc          cl
+                   cmp          cl, ch
+                   jg           finish
+                   jmp          while
+    finish:        
 endm
 
-cascadaX4 macro
-                 LOCAL        coefficient3, coefficient2, coefficient1, coefficient0, minus4,minus3,minus2,minus1,minus, fin
+PosicionarX4 macro
+                 LOCAL          coefficient3, coefficient2, coefficient1, coefficient0, minus4,minus3,minus2,minus1,minus, fin
     ;Coefficient 4
-                 cmp          cl, 10
-                 jg           fin
+                 cmp            cl, 10
+                 jg             fin
 
-                 cmp          coef4[0], 45
-                 je           minus4
+                 cmp            coef4[0], 45
+                 je             minus4
     ;x^4
                  pushExceptAX
-                 xor          ch, ch
-                 potencia     4, cx
+                 xor            ch, ch
+                 Solve_Potencia 4, cx
                  popExceptAx
     ;------------------c4 * x^4----------------
-                 push         dx
-                 xor          dx, dx
-                 mov          dl, coef4[1]
-                 mul          dx
-                 pop          dx
+                 push           dx
+                 xor            dx, dx
+                 mov            dl, coef4[1]
+                 mul            dx
+                 pop            dx
     ;-----------------scale xd-----------------
                  pushExceptAX
-                 xor          dx, dx
-                 mov          cx, 500
-                 div          cx
+                 xor            dx, dx
+                 mov            cx, 500
+                 div            cx
                  popExceptAx
     ;----------------real value---------------
-                 sub          dx, ax
-                 jmp          coefficient3
+                 sub            dx, ax
+                 jmp            coefficient3
     minus4:      
     ;------------------x^4--------------------
                  pushExceptAX
-                 xor          ch, ch
-                 potencia     4, cx
+                 xor            ch, ch
+                 Solve_Potencia 4, cx
                  popExceptAx
     ;-----------------c4 * x^4----------------
-                 push         dx
-                 xor          dx, dx
-                 mov          dl, coef4[1]
-                 mul          dx
-                 pop          dx
+                 push           dx
+                 xor            dx, dx
+                 mov            dl, coef4[1]
+                 mul            dx
+                 pop            dx
     ;-----------------scale xd----------------
-                 push         cx
-                 mov          cx, 500
-                 div          cx
-                 pop          cx
+                 push           cx
+                 mov            cx, 500
+                 div            cx
+                 pop            cx
     ;----------------real value---------------
-                 add          dx, ax
+                 add            dx, ax
     coefficient3:
-                 cmp          coef3[0], 45
-                 je           minus3
+                 cmp            coef3[0], 45
+                 je             minus3
     ;----------------x^3---------------
                  pushExceptAX
-                 xor          ch, ch
-                 potencia     3, cx
+                 xor            ch, ch
+                 Solve_Potencia 3, cx
                  popExceptAx
     ;------------------c3 * x^3----------------
-                 push         dx
-                 xor          dx, dx
-                 mov          dl, coef3[1]
-                 mul          dx
-                 pop          dx
+                 push           dx
+                 xor            dx, dx
+                 mov            dl, coef3[1]
+                 mul            dx
+                 pop            dx
     ;-----------------scale xd-----------------
                  pushExceptAX
-                 xor          dx, dx
-                 mov          cx, 500
-                 div          cx
+                 xor            dx, dx
+                 mov            cx, 500
+                 div            cx
                  popExceptAx
     ;----------------real value---------------
-                 sub          dx, ax
-                 jmp          coefficient2
+                 sub            dx, ax
+                 jmp            coefficient2
     minus3:      
     ;------------------x^3--------------------
                  pushExceptAX
-                 xor          ch, ch
-                 potencia     3, cx
+                 xor            ch, ch
+                 Solve_Potencia 3, cx
                  popExceptAx
     ;-----------------c3 * x^3----------------
-                 push         dx
-                 xor          dx, dx
-                 mov          dl, coef3[1]
-                 mul          dx
-                 pop          dx
+                 push           dx
+                 xor            dx, dx
+                 mov            dl, coef3[1]
+                 mul            dx
+                 pop            dx
     ;-----------------scale xd----------------
-                 push         cx
-                 mov          cx, 500
-                 div          cx
-                 pop          cx
+                 push           cx
+                 mov            cx, 500
+                 div            cx
+                 pop            cx
     ;----------------real value---------------
-                 add          dx, ax
+                 add            dx, ax
     coefficient2:
-                 cmp          coef2[0],45
-                 je           minus2
+                 cmp            coef2[0],45
+                 je             minus2
     ;----------------x^2---------------
                  pushExceptAX
-                 xor          ch, ch
-                 potencia     2, cx
+                 xor            ch, ch
+                 Solve_Potencia 2, cx
                  popExceptAx
     ;------------------c2 * x^2----------------
-                 push         dx
-                 xor          dx, dx
-                 mov          dl, coef2[1]
-                 mul          dx
-                 pop          dx
+                 push           dx
+                 xor            dx, dx
+                 mov            dl, coef2[1]
+                 mul            dx
+                 pop            dx
     ;-----------------scale xd-----------------
                  pushExceptAX
-                 xor          dx, dx
-                 mov          cx, 500
-                 div          cx
+                 xor            dx, dx
+                 mov            cx, 500
+                 div            cx
                  popExceptAx
     ;----------------real value---------------
-                 sub          dx, ax
-                 jmp          coefficient1
+                 sub            dx, ax
+                 jmp            coefficient1
     minus2:      
     ;------------------x^2--------------------
                  pushExceptAX
-                 xor          ch, ch
-                 potencia     2, cx
+                 xor            ch, ch
+                 Solve_Potencia 2, cx
                  popExceptAx
     ;-----------------c2 * x^2----------------
-                 push         dx
-                 xor          dx, dx
-                 mov          dl, coef2[1]
-                 mul          dx
-                 pop          dx
+                 push           dx
+                 xor            dx, dx
+                 mov            dl, coef2[1]
+                 mul            dx
+                 pop            dx
     ;-----------------scale xd----------------
-                 push         cx
-                 mov          cx, 500
-                 div          cx
-                 pop          cx
+                 push           cx
+                 mov            cx, 500
+                 div            cx
+                 pop            cx
     ;----------------real value---------------
-                 add          dx, ax
+                 add            dx, ax
     coefficient1:
-                 cmp          coef1[0], 45
-                 je           minus1
+                 cmp            coef1[0], 45
+                 je             minus1
     ;----------------x^1---------------
                  pushExceptAX
-                 xor          ch, ch
-                 potencia     1, cx
+                 xor            ch, ch
+                 Solve_Potencia 1, cx
                  popExceptAx
     ;------------------c1 * x^1----------------
-                 push         dx
-                 xor          dx, dx
-                 mov          dl, coef1[1]
-                 mul          dx
-                 pop          dx
+                 push           dx
+                 xor            dx, dx
+                 mov            dl, coef1[1]
+                 mul            dx
+                 pop            dx
     ;-----------------scale xd-----------------
                  pushExceptAX
-                 xor          dx, dx
-                 mov          cx, 500
-                 div          cx
+                 xor            dx, dx
+                 mov            cx, 500
+                 div            cx
                  popExceptAx
     ;----------------real value---------------
-                 sub          dx, ax
-                 jmp          coefficient0
+                 sub            dx, ax
+                 jmp            coefficient0
     minus1:      
     ;------------------x^1--------------------
                  pushExceptAX
-                 xor          ch, ch
-                 potencia     3, cx
+                 xor            ch, ch
+                 Solve_Potencia 3, cx
                  popExceptAx
     ;-----------------c1 * x^1----------------
-                 push         dx
-                 xor          dx, dx
-                 mov          dl, coef1[1]
-                 mul          dx
-                 pop          dx
+                 push           dx
+                 xor            dx, dx
+                 mov            dl, coef1[1]
+                 mul            dx
+                 pop            dx
     ;-----------------scale xd----------------
-                 push         cx
-                 mov          cx, 500
-                 div          cx
-                 pop          cx
+                 push           cx
+                 mov            cx, 500
+                 div            cx
+                 pop            cx
     ;----------------real value---------------
-                 add          dx, ax
+                 add            dx, ax
     coefficient0:
-                 cmp          coef0[0], 45
-                 je           minus
-                 push         cx
-                 xor          ch, ch
-                 mov          cl, coef0[1]
-                 sub          dx, cx
-                 pop          cx
-                 jmp          fin
+                 cmp            coef0[0], 45
+                 je             minus
+                 push           cx
+                 xor            ch, ch
+                 mov            cl, coef0[1]
+                 sub            dx, cx
+                 pop            cx
+                 jmp            fin
     minus:       
-                 push         cx
-                 xor          ch, ch
-                 mov          cl, coef0[1]
-                 add          dx, cx
-                 pop          cx
+                 push           cx
+                 xor            ch, ch
+                 mov            cl, coef0[1]
+                 add            dx, cx
+                 pop            cx
     fin:         
 
 endm
 
+;----------------------------------------------------------------------------------------
+;   DIBUJAR DE GRADO 3
+;----------------------------------------------------------------------------------------
+Execute_3Grade macro var3, var2, var1, var0
+                   LOCAL        while, is_negative, is_positive, continue, finish
+                   xor          ax, ax
+                   xor          bx, bx
+                   xor          cx, cx                                               ;cl = intervaloI | ch = intervaloF
+                   mov          cl, var_intervaloI[1]
+                   mov          ch, var_intervaloF[1]
+
+    while:         
+                   xor          ax, ax
+                   mov          bl, 160                                              ;x
+                   mov          dl, 100                                              ;y (160,100) - (0,0)
+    ;checkSign
+                   test         cl,cl
+                   js           is_negative
+                   jmp          is_positive
+    ;---------------Axis x----------------
+    is_negative:   
+                   neg          cl
+                   sub          bl, cl                                               ;where x start
+    ;y
+                   PosicionarX3 0, var3, var2, var1, var0
+                   neg          cl
+                   jmp          continue
+    is_positive:   
+                   mul          cl
+                   add          bl, cl
+                   PosicionarX3 1, var3, var2, var1, var0
+    ;-------------Axis y-------------------
+    continue:      
+    ;Draw
+                   Draw_Pixel   bx, dx, 0ch
+                   inc          cl
+                   cmp          cl, ch
+                   jg           finish
+                   jmp          while
+    finish:        
+endm
+
+PosicionarX3 macro signo, var3, var2, var1, var0
+                 LOCAL          fin, positive, negative, minus3,coefficient2, minus31, minus32, minus2, minus1, minus, coefficient1, coefficient0
+                 cmp            cl, 30
+                 jg             fin
+
+                 push           cx
+                 mov            ch, signo
+                 cmp            ch, 0
+                 je             negative
+
+    ;------------------------------------------------------------------------------------------
+    ;Positive
+                 pop            cx
+
+                 cmp            var3[0], 45
+                 je             minus31
+    ;----------------x^3---------------
+                 pushExceptAX
+                 xor            ch, ch
+                 Solve_Potencia 3, cx
+                 popExceptAx
+    ;------------------c3 * x^3----------------
+                 push           dx
+                 xor            dx, dx
+                 mov            dl, var3[1]
+                 mul            dx
+                 pop            dx
+    ;-----------------scale xd-----------------
+                 pushExceptAX
+                 xor            dx, dx
+                 mov            cx, 500
+                 div            cx
+                 popExceptAx
+    ;----------------real value---------------
+                 sub            dx, ax
+                 jmp            coefficient2
+    minus31:     
+    ;------------------x^3--------------------
+                 pushExceptAX
+                 xor            ch, ch
+                 Solve_Potencia 3, cx
+                 popExceptAx
+    ;-----------------c3 * x^3----------------
+                 push           dx
+                 xor            dx, dx
+                 mov            dl, var3[1]
+                 mul            dx
+                 pop            dx
+    ;-----------------scale xd----------------
+                 push           cx
+                 mov            cx, 500
+                 div            cx
+                 pop            cx
+    ;----------------real value---------------
+                 add            dx, ax
+                 jmp            coefficient2
+    ;--------------------------------------------------------------------------------------
+    negative:    
+                 pop            cx
+
+                 cmp            var3[0], 45
+                 je             minus32
+    ;----------------x^3---------------
+                 pushExceptAX
+                 xor            ch, ch
+                 Solve_Potencia 3, cx
+                 popExceptAx
+    ;------------------c3 * x^3----------------
+                 push           dx
+                 xor            dx, dx
+                 mov            dl, var3[1]
+                 mul            dx
+                 pop            dx
+    ;-----------------scale xd-----------------
+                 pushExceptAX
+                 xor            dx, dx
+                 mov            cx, 500
+                 div            cx
+                 popExceptAx
+    ;----------------real value---------------
+                 add            dx, ax
+                 jmp            coefficient2
+    minus32:     
+    ;------------------x^3--------------------
+                 pushExceptAX
+                 xor            ch, ch
+                 Solve_Potencia 3, cx
+                 popExceptAx
+    ;-----------------c3 * x^3----------------
+                 push           dx
+                 xor            dx, dx
+                 mov            dl, var3[1]
+                 mul            dx
+                 pop            dx
+    ;-----------------scale xd----------------
+                 push           cx
+                 mov            cx, 500
+                 div            cx
+                 pop            cx
+    ;----------------real value---------------
+                 sub            dx, ax
+    coefficient2:
+                 cmp            var2[0], 45
+                 je             minus2
+    ;----------------x^2---------------
+                 pushExceptAX
+                 xor            ch, ch
+                 Solve_Potencia 2, cx
+                 popExceptAx
+    ;------------------c2 * x^2----------------
+                 push           dx
+                 xor            dx, dx
+                 mov            dl, var2[1]
+                 mul            dx
+                 pop            dx
+    ;-----------------scale xd-----------------
+                 pushExceptAX
+                 xor            dx, dx
+                 mov            cx, 500
+                 div            cx
+                 popExceptAx
+    ;----------------real value---------------
+                 sub            dx, ax
+                 jmp            coefficient1
+    minus2:      
+    ;------------------x^2--------------------
+                 pushExceptAX
+                 xor            ch, ch
+                 Solve_Potencia 2, cx
+                 popExceptAx
+    ;-----------------c2 * x^2----------------
+                 push           dx
+                 xor            dx, dx
+                 mov            dl, var2[1]
+                 mul            dx
+                 pop            dx
+    ;-----------------scale xd----------------
+                 push           cx
+                 mov            cx, 500
+                 div            cx
+                 pop            cx
+    ;----------------real value---------------
+                 add            dx, ax
+    coefficient1:
+                 cmp            var1[0],45
+                 je             minus1
+    ;----------------x^1---------------
+                 pushExceptAX
+                 xor            ch, ch
+                 Solve_Potencia 1, cx
+                 popExceptAx
+    ;------------------c1 * x^1----------------
+                 push           dx
+                 xor            dx, dx
+                 mov            dl, var1[1]
+                 mul            dx
+                 pop            dx
+    ;-----------------scale xd-----------------
+                 pushExceptAX
+                 xor            dx, dx
+                 mov            cx, 500
+                 div            cx
+                 popExceptAx
+    ;----------------real value---------------
+                 sub            dx, ax
+                 jmp            coefficient0
+    minus1:      
+    ;------------------x^1--------------------
+                 pushExceptAX
+                 xor            ch, ch
+                 Solve_Potencia 3, cx
+                 popExceptAx
+    ;-----------------c1 * x^1----------------
+                 push           dx
+                 xor            dx, dx
+                 mov            dl, var1[1]
+                 mul            dx
+                 pop            dx
+    ;-----------------scale xd----------------
+                 push           cx
+                 mov            cx, 500
+                 div            cx
+                 pop            cx
+    ;----------------real value---------------
+                 add            dx, ax
+    coefficient0:
+                 cmp            var0[0], 45
+                 je             minus
+                 push           cx
+                 xor            ch, ch
+                 mov            cl, var0[1]
+                 sub            dx, cx
+                 pop            cx
+                 jmp            fin
+    minus:       
+                 push           cx
+                 xor            ch, ch
+                 mov            cl, var0[1]
+                 add            dx, cx
+                 pop            cx
+
+
+    fin:         
+endm
+
+;----------------------------------------------------------------------------------------
+;   DIBUJAR DE GRADO 2
+;----------------------------------------------------------------------------------------
+Execute_2Grade macro var2, var1, var0
+                   LOCAL        while, finish, is_negative, is_positive, continue
+                   xor          ax, ax
+                   xor          bx, bx
+                   xor          cx, cx                                               ;cl = inter1 | ch = inter2
+                   mov          cl, var_intervaloI[1]
+                   mov          ch, var_intervaloF[1]
+
+    while:         
+                   xor          ax, ax
+                   mov          bl, 160                                              ;x
+                   mov          dl, 100                                              ;y (160,100) - (0,0)
+    ;checkSign
+                   test         cl,cl
+                   js           is_negative
+                   jmp          is_positive
+    is_negative:   
+                   neg          cl
+                   sub          bl, cl
+                   PosicionarX2 var2, var1, var0
+                   neg          cl
+                   jmp          continue
+    is_positive:   
+                   mul          cl
+                   add          bl, cl
+                   PosicionarX2 var2, var1, var0
+    continue:      
+    ;Draw
+                   Draw_Pixel   bx, dx, 0ch
+                   inc          cl
+                   cmp          cl, ch
+                   jg           finish
+                   jmp          while
+    finish:        
+endm
+
+PosicionarX2 macro var2, var1, var0
+                 LOCAL          minus2, minus1, continue, minus0, fin, coefficient1, coefficient0
+                 cmp            cl, 80
+                 jg             fin
+    ;------------coefficient 2---------------
+                 cmp            var2[0], 45
+                 je             minus2
+    ;Positivo
+    ;---------------x^2---------------
+                 pushExceptAX
+                 xor            ch, ch
+                 Solve_Potencia 2, cx
+                 popExceptAx
+    ;---------------c2*x^2--------------
+                 push           dx
+                 xor            dx, dx
+                 mov            dl, var2[1]
+                 mul            dx
+                 pop            dx
+    ;-----------------Scale xd-------------
+                 pushExceptAX
+                 xor            dx, dx
+                 mov            cx, 500
+                 div            cx
+                 popExceptAx
+    ;--------------real value---------------
+                 sub            dx, ax
+                 jmp            coefficient1
+    ;Negativo
+    minus2:      
+    ;---------------x^2---------------
+                 pushExceptAX
+                 xor            ch, ch
+                 Solve_Potencia 2, cx
+                 popExceptAx
+    ;---------------c2*x^2--------------
+                 push           dx
+                 xor            dx, dx
+                 mov            dl, var2[1]
+                 mul            dx
+                 pop            dx
+    ;-----------------Scale xd-------------
+                 pushExceptAX
+                 xor            dx, dx
+                 mov            cx, 500
+                 div            cx
+                 popExceptAx
+    ;--------------real value---------------
+                 add            dx, ax
+    coefficient1:
+                 xor            ax, ax
+                 cmp            var1[0],45
+                 je             minus1
+    ;positivo
+    ;---------------x^1---------------
+                 pushExceptAX
+                 xor            ch, ch
+                 Solve_Potencia 1, cx
+                 popExceptAx
+    ;---------------c1*x^1--------------
+                 push           dx
+                 xor            dx, dx
+                 mov            dl, var1[1]
+                 mul            dx
+                 pop            dx
+    ;-----------------Scale xd-------------
+                 pushExceptAX
+                 xor            dx, dx
+                 mov            cx, 500
+                 div            cx
+                 popExceptAx
+    ;--------------real value---------------
+                 sub            dx, ax
+                 jmp            coefficient0
+    minus1:      
+    ;---------------x^1---------------
+                 pushExceptAX
+                 xor            ch, ch
+                 Solve_Potencia 1, cx
+                 popExceptAx
+    ;---------------c1*x^1--------------
+                 push           dx
+                 xor            dx, dx
+                 mov            dl, var1[1]
+                 mul            dx
+                 pop            dx
+    ;-----------------Scale xd-------------
+                 pushExceptAX
+                 xor            dx, dx
+                 mov            cx, 500
+                 div            cx
+                 popExceptAx
+    ;--------------real value---------------
+                 add            dx, ax
+    coefficient0:
+    ;coefficient 0
+                 cmp            var0[0],45
+                 je             minus0
+                 push           cx
+                 xor            ch, ch
+                 mov            cl, var0[1]
+                 sub            dx, cx
+                 pop            cx
+                 jmp            fin
+    minus0:      
+                 push           cx
+                 xor            ch, ch
+                 mov            cl, var0[1]
+                 add            dx, cx
+                 pop            cx
+    fin:         
+
+endm
+
+;----------------------------------------------------------------------------------------
+;   DIBUJAR DE GRADO 1
+;----------------------------------------------------------------------------------------
+Execute_1Grade macro var1, var0
+                   LOCAL      while, finish, is_negative, is_positive, continue, plusN, plusP, minusN, minusP
+                   xor        ax, ax
+                   xor        bx, bx                                                                             ;x
+                   xor        cx, cx                                                                             ;cl = inter1 | ch = inter2
+                   mov        cl, var_intervaloI[1]
+                   mov        ch, var_intervaloF[1]
+                   mov        dl, 100                                                                            ;y
+                   mov        bl, 160                                                                            ;(160,100) - (0,0)
+    
+    while:         
+                   mov        al, coef1[1]                                                                       ;al = coeficiente
+                   mov        dl, 100
+                   mov        bl, 160
+    ;checkSign
+                   test       cl, cl
+                   js         is_negative
+                   jmp        is_positive
+    is_negative:   
+                   neg        cl
+                   sub        bl, cl
+                   mul        cl
+                   neg        cl
+                   add        dl, al
+    ;todo check sign coefficient 0
+                   cmp        coef0[0],43
+                   je         plusN
+                   jmp        minusN
+    plusN:         
+                   sub        dl,coef0[1]
+                   jmp        continue
+    minusN:        
+                   add        dl, coef0[1]
+                   jmp        continue
+    is_positive:   
+                   mul        cl
+                   sub        dl, al
+                   add        bl, cl
+                   cmp        coef0[0],43
+                   je         plusP
+                   jmp        minusP
+    plusP:         
+                   sub        dl, coef0[1]
+                   jmp        continue
+    minusP:        
+                   add        dl, coef0[1]
+    continue:      
+                   inc        cl
+                   xor        dh, dh
+    ;check axis x
+                   Draw_Pixel bx, dx, 0ch
+                   cmp        cl, ch
+                   jne        while
+                   jmp        finish
+    finish:        
+
+endm
+
+;----------------------------------------------------------------------------------------
+;   DIBUJAR DE GRADO 0
+;----------------------------------------------------------------------------------------
+Execute_Constant macro var0
+                     local      while, temp, finish, plus, minus, continue
+                     xor        bx, bx
+                     xor        cx, cx
+                     mov        cl, var_intervaloI[1]
+                     mov        ch, var_intervaloF[1]
+                     mov        bl, 160                                       ;x
+                     mov        dl, 100                                       ;y
+    ;checkSign coefficient
+                     cmp        var0[0], 43
+                     je         plus
+                     jmp        minus
+
+    plus:            
+                     sub        dl, var0[1]
+                     jmp        continue
+    minus:           
+                     add        dl, var0[1]
+    continue:        
+                     cmp        var_intervaloI[0], 45
+                     je         temp
+                     add        bl, var_intervaloI[1]
+    
+    while:           
+                     inc        cl
+                     xor        dh, dh
+                     Draw_Pixel bx, dx, 0ch
+                     inc        bl
+                     cmp        cl, ch
+                     jne        while
+                     jmp        finish
+    temp:            
+                     neg        cl
+                     sub        bl, cl
+                     neg        cl
+                     jmp        while
+    finish:          
+endm
+
+;----------------------------------------------------------------------------------------
+;   GRAPH DERIVATIVE
+; Inicia el modo video y dibuja la grafica de la derivada, termina pasando a modo texto
+;----------------------------------------------------------------------------------------
+Graph_Derivative macro
+                     AsciiToNumber           ; Para las variables que almacenan los coeficientes
+                     Set_Coef_Derivative
+                     ModoVideo
+                     Draw_Axis
+                     Choose_Derivative
+                     pressKey                ;Press a key to continue
+                     ModoTexto               ;back to text mode
+endm
+
+Set_Coef_Derivative macro
+                        local coefficient4, coefficient3, coefficient2, coefficient1, finish
+                        xor   ax, ax
+                        xor   bx, bx
+                        xor   cx, cx
+                        cmp   coef4[1], 0
+                        je    coefficient3
+    coefficient4:       
+                        mov   al, coef4[1]
+                        mov   bl, 4
+                        mul   bl
+                        mov   cl, coef4[0]
+                        mov   c_der3[0], cl
+                        mov   c_der3[1], al
+    coefficient3:       
+                        cmp   coef3[1],0
+                        je    coefficient2
+                        mov   al, coef3[1]
+                        mov   bl, 3
+                        mul   bl
+                        mov   cl, coef3[0]
+                        mov   c_der2[0], cl
+                        mov   c_der2[1], al
+    coefficient2:       
+                        cmp   coef2[1],0
+                        je    coefficient1
+                        mov   al, coef2[1]
+                        mov   bl, 2
+                        mul   bl
+                        mov   cl, coef2[0]
+                        mov   c_der1[0], cl
+                        mov   c_der1[1], al
+    coefficient1:       
+                        cmp   coef1[1],0
+                        je    finish
+                        mov   al, coef1[1]
+                        mov   bl, 1
+                        mul   bl
+                        mov   cl, coef1[0]
+                        mov   c_der0[0], cl
+                        mov   c_der0[1], al
+    finish:             
+endm
+
+Choose_Derivative macro
+                      local            isCubic, isCuadratic, isLineal, isConstant, finish
+                      cmp              c_der3[1], 0
+                      jne              isCubic
+                      cmp              c_der2[1], 0
+                      jne              isCuadratic
+                      cmp              c_der1[1], 0
+                      jne              isLineal
+                      cmp              c_der0[0], 0
+                      jne              isConstant
+                      jmp              finish
+
+    isCubic:          
+                      Execute_3Grade   c_der3, c_der2, c_der1, c_der0
+                      jmp              finish
+    isCuadratic:      
+                      Execute_2Grade   c_der2, c_der1, c_der0
+                      jmp              finish
+    isLineal:         
+                      Execute_1Grade   c_der1, c_der0
+                      jmp              finish
+    isConstant:       
+                      Execute_Constant c_der0
+                      jmp              finish
+    finish:           
+
+endm
+
+;----------------------------------------------------------------------------------------
+;   GRAPH INTEGRAL
+; Inicia el modo video y dibuja la grafica de la integral, termina pasando a modo texto
+;----------------------------------------------------------------------------------------
+Graph_Integral macro
+                   AsciiToNumber           ; Para las variables que almacenan los coeficientes
+                   Set_Coef_Derivative
+                   ModoVideo
+                   Draw_Axis
+                   Choose_Integral
+                   pressKey                ;Press a key to continue
+                   ModoTexto               ;back to text mode
+endm
 pushExceptAX macro
                  push bx
                  push cx
@@ -1418,23 +2026,23 @@ popExceptAx macro
                 pop bx
 endm
 
-potencia macro exponente, value
-             LOCAL while, finish
-             xor   bx, bx
-             mov   bl, exponente
-             mov   ax, 1
+Solve_Potencia macro exponente, value
+                   LOCAL while, finish
+                   xor   bx, bx
+                   mov   bl, exponente
+                   mov   ax, 1
 
-             cmp   bl, 0
-             jg    while
-             jmp   finish
+                   cmp   bl, 0
+                   jg    while
+                   jmp   finish
 
-    while:   
-             cmp   bx, 1
-             jl    finish
-             mul   value
-             dec   bx
-             jmp   while
-    finish:  
+    while:         
+                   cmp   bx, 1
+                   jl    finish
+                   mul   value
+                   dec   bx
+                   jmp   while
+    finish:        
 endm
 
 pressKey macro
